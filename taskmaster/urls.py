@@ -5,13 +5,16 @@ from taskmaster.tag_view import TagCreateAPIView, TagRetrieveUpdateDestroyAPIVie
 from taskmaster.task_view import TaskCreateAPIView, TaskRetrieveUpdateDestroyAPIView
 from taskmaster.activity_view import ActivityCreateAPIView, ActivityRetrieveUpdateDestroyAPIView
 from taskmaster.comment_view import CommentCreateAPIView, CommentRetrieveUpdateDestroyAPIView
-from taskmaster.views import RegisterAPI, MyObtainTokenPairView
-from rest_framework_simplejwt.views import TokenRefreshView
+from taskmaster.views import RegisterAPI, ChangePasswordAPI, LogoutAPI, LogoutAllAPI
+from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
 
 urlpatterns = [
-    path('login/', MyObtainTokenPairView.as_view(), name='token_obtain_pair'),
+    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('login/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('register/', RegisterAPI.as_view(), name='auth_register'),
+    path('change_password/<int:pk>/', ChangePasswordAPI.as_view(), name='auth_change_password'),
+    path('logout/', LogoutAPI.as_view(), name='auth_logout'),
+    path('logout_all/',LogoutAllAPI.as_view(), name='auth_logout_all'),
 
     # UserProfileView
     path('userprofile/', UserProfileCreateAPIView.as_view(), name='user-profile-list-create'),
