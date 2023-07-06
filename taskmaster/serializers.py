@@ -1,45 +1,55 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
+from django.contrib.auth.password_validation import validate_password
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from taskmaster.models import UserProfile, Task, Tag, Activity, Comment
 
 
-# User serializer
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('id', 'username', 'email')
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super(MyTokenObtainPairSerializer, cls).get_token(user)
+
+        # custom claims
+        token['username'] = user.username
+        return token
 
 
 # Register serializer
-class RegisterSerializer(serializers.Serializer):
+class RegisterSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True, validators=[UniqueValidator(queryset=User.objects.all())])
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password2 = serializers.CharField(write_only=True, required=True)
+
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password', 'firstname', 'lastname')
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ('username', 'password', 'password2', 'email', 'first_name', 'last_name')
+        extra_kwargs = {
+            'first_name': {'required': True},
+            'last_name': {'required': True}
+        }
 
     def validate(self, attrs):
-        if attrs['username'] is None:
-            raise serializers.as_serializer_error()
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({"password": "Password Fields didn't match."})
+
+        return attrs
 
     def create(self, validated_data):
-        user = User.objects.create_user(validated_data['username'], validated_data['email'], validated_data['password'],
-                                        validated_data['firstname'], validated_data['lastname'])
+        user = User.objects.create(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name']
+        )
+
+        user.set_password(validated_data['password'])
+        user.save()
 
         return user
-
-
-# Login Serializer
-class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField()
-
-    def validate(self, data):
-        user = authenticate(**data)
-        if user and user.is_active:
-            return user
-        raise serializers.ValidationError("Incorrect Credentials")
 
 
 # UserProfileSerializer
