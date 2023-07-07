@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from django.contrib.auth.models import User
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -8,7 +7,6 @@ from .serializers import RegisterSerializer, ChangePasswordSerializer
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-
 
 
 # Register API
@@ -40,6 +38,7 @@ class LogoutAPI(APIView):
 
 class LogoutAllAPI(APIView):
     permission_classes = (IsAuthenticated,)
+
     def post(self, request):
         tokens = OutstandingToken.objects.filter(user_id=request.user.id)
         for token in tokens:
