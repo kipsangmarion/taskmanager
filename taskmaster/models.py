@@ -6,15 +6,13 @@ from django.contrib.auth.models import User
 class UserProfile(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_in_profile')
-    registered_at = models.DateTimeField(auto_now_add=True)
-    last_login = models.DateTimeField(auto_now_add=True)
     intro = models.TextField()
     image = models.ImageField()
 
 
 TASK_STATUSES = (
     ('NEW', 'new'),
-    ('IN-PROGRESS', 'in-progress'),
+    ('INPROGRESS', 'in-progress'),
     ('COMPLETED', 'completed')
 )
 
@@ -26,20 +24,15 @@ TASK_TAGS = (
 )
 
 
-class Tag(models.Model):
+class Task(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_in_task')
+    title = models.TextField()
     tag = models.CharField(
         max_length=100,
         choices=TASK_TAGS,
         default=1
     )
-
-
-class Task(models.Model):
-    id = models.AutoField(primary_key=True, unique=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_in_task')
-    title = models.TextField()
-    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name='tag_in_task')
     desc = models.TextField()
     status = models.CharField(
         max_length=20,
@@ -76,10 +69,6 @@ class Activity(models.Model):
     hours = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now_add=True)
-    planned_start_date = models.DateTimeField(null=False, blank=False)
-    planned_end_date = models.DateTimeField(null=False, blank=False)
-    actual_start_date = models.DateTimeField(null=False, blank=False)
-    actual_end_date = models.DateTimeField(null=False, blank=False)
     content = models.TextField()
 
 
@@ -87,6 +76,4 @@ class Comment(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comment_in_task')
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='comment_in_activity')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
     content = models.TextField()

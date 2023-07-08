@@ -6,11 +6,9 @@ from rest_framework.permissions import IsAuthenticated
 
 class TaskCreateAPIView(generics.ListCreateAPIView):
     queryset = Task.objects.all()
-    permission_classes = (IsAuthenticated,)
     serializer_class = TaskSerializer
 
 
 class TaskRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Task.objects.all()
-    permission_classes = (IsAuthenticated,)
     serializer_class = Task

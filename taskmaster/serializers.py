@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
 
-from taskmaster.models import UserProfile, Task, Tag, Activity, Comment
+from taskmaster.models import UserProfile, Task, Activity, Comment
 
 
 # Register serializer
@@ -79,13 +79,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
-        fields = '__all__'
-
-
-# TagSerializer
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
         fields = '__all__'
 
 
