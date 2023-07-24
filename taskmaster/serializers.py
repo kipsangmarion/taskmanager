@@ -74,6 +74,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = '__all__'
 
+    def to_representation(self, instance):
+        # Get the representation of the UserProfile model
+        representation = super(UserProfileSerializer, self).to_representation(instance)
+
+        # Add the User model fields to the representation
+        user = instance.user
+        representation['user_id'] = user.id
+        representation['username'] = user.username
+        representation['email'] = user.email
+        representation['first_name'] = user.first_name
+        representation['last_name'] = user.last_name
+
+        # Remove the 'user' field from the representation (optional)
+        representation.pop('user')
+
+        return representation
+
+
+
 
 # TaskSerializer
 class TaskSerializer(serializers.ModelSerializer):

@@ -19,9 +19,10 @@ urlpatterns = [
     path('userprofile/', UserProfileCreateAPIView.as_view(), name='user-profile-list-create'),
     path('userprofile/<int:pk>/', UserProfileRetrieveUpdateDestroyAPIView.as_view(), name='user-profile-detail'),
 
+
     # TaskView
     path('task/', TaskCreateAPIView.as_view(), name='task-list-create'),
-    path('task/<int:pk>/', TaskRetrieveUpdateDestroyAPIView.as_view(), name='task-list-detail'),
+    path('task/<int:pk>/', TaskRetrieveUpdateDestroyAPIView.as_view(), name='task-detail'),
 
     # ActivityView
     path('activity/', ActivityCreateAPIView.as_view(), name='activity-list-create'),

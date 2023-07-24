@@ -37,7 +37,7 @@ class Task(models.Model):
     status = models.CharField(
         max_length=20,
         choices=TASK_STATUSES,
-        default=1
+        default=1,null=True
     )
     hours = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -64,7 +64,8 @@ class Activity(models.Model):
     status = models.CharField(
         max_length=20,
         choices=TASK_STATUSES,
-        default=1
+        default=1,
+        null=True
     )
     hours = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -74,6 +75,6 @@ class Activity(models.Model):
 
 class Comment(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comment_in_task')
-    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='comment_in_activity')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comment_in_task',null=True)
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='comment_in_activity',null=True)
     content = models.TextField()
