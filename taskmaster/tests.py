@@ -1,74 +1,126 @@
-from django.test import TestCase, RequestFactory
+from django.urls import reverse
 from django.contrib.auth.models import User
-from rest_framework.test import force_authenticate
-from taskmaster.models import Task
-from taskmaster.serializers import TaskSerializer
-from taskmaster.task_view import TaskCreateAPIView, TaskRetrieveUpdateDestroyAPIView
+from rest_framework import status
+from rest_framework.test import APITestCase
+from .models import UserProfile, Task, Activity, Comment
+from .serializers import UserProfileSerializer, TaskSerializer, ActivitySerializer, CommentSerializer
 
 
-class TaskAPIViewTestCase(TestCase):
+class UserProfileAPITest(APITestCase):
     def setUp(self):
-        self.factory = RequestFactory()
         self.user = User.objects.create_user(username='testuser', password='testpassword')
-        self.task_data = {'title': 'Sample Task', 'desc': 'Sample Description', 'tag': 'Sample Tag'}
-        self.task = Task.objects.create(title='Sample Task', desc='Sample Description', tag='Sample Tag')
+        self.user_profile = UserProfile.objects.create(user=self.user, intro='Test intro')
 
-    def test_task_create_api_view(self):
-        # Create a request with task data
-        request = self.factory.post('/tasks/', self.task_data)
-        force_authenticate(request, user=self.user)
+        self.create_url = reverse('user-profile-list-create')
+        self.detail_url = reverse('user-profile-detail', args=[self.user_profile.id])
+        self.login_url = reverse('token_obtain_pair')
 
-        # Set up the view and create the task
-        view = TaskCreateAPIView.as_view()
-        response = view(request)
-        self.assertEqual(response.status_code, 201)
+        self.login_data = {
+            'username': 'testuser',
+            'password': 'testpassword'
+        }
 
-        # Check that the task is created in the database
-        task = Task.objects.last()
-        self.assertEqual(task.title, self.task_data['title'])
-        self.assertEqual(task.description, self.task_data['description'])
-        self.assertEqual(task.tag, self.task_data['tag'])
+        self.token_response = self.client.post(self.login_url, self.login_data, format='json')
+        self.access_token = self.token_response.data['access']
 
-    def test_task_retrieve_update_destroy_api_view(self):
-        # Create a request to retrieve the task
-        request = self.factory.get(f'/tasks/{self.task.id}/')
-        force_authenticate(request, user=self.user)
+    def test_create_user_profile(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.access_token)
+        data = {
+            'intro': 'New intro',
+        }
+        response = self.client.post(self.create_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(UserProfile.objects.count(), 2)  # 1 existing + 1 new profile
+        self.assertEqual(response.data['intro'], 'New intro')
 
-        # Set up the view and retrieve the task
-        view = TaskRetrieveUpdateDestroyAPIView.as_view()
-        response = view(request, pk=self.task.id)
-        self.assertEqual(response.status_code, 200)
+    def test_retrieve_user_profile(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.access_token)
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['intro'], 'Test intro')
 
-        # Check that the retrieved task matches the created task
-        self.assertEqual(response.data['title'], self.task.title)
-        self.assertEqual(response.data['description'], self.task.description)
-        self.assertEqual(response.data['tag'], self.task.tag)
+    def test_update_user_profile(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.access_token)
+        data = {
+            'intro': 'Updated intro',
+        }
+        response = self.client.patch(self.detail_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['intro'], 'Updated intro')
 
-        # Create a request to update the task
-        updated_data = {'title': 'Updated Task', 'description': 'Updated Description', 'tag': 'Updated Tag'}
-        request = self.factory.put(f'/tasks/{self.task.id}/', updated_data)
-        force_authenticate(request, user=self.user)
 
-        # Set up the view and update the task
-        view = TaskRetrieveUpdateDestroyAPIView.as_view()
-        response = view(request, pk=self.task.id)
-        self.assertEqual(response.status_code, 200)
+class TaskAPITest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.task = Task.objects.create(
+            user=self.user,
+            title='Test Task',
+            tag='UI',
+            desc='Test description',
+            status='NEW',
+            hours=5.0,
+            planned_start_date='2023-07-31T10:00:00Z',
+            planned_end_date='2023-07-31T15:00:00Z',
+            actual_start_date='2023-07-31T11:00:00Z',
+            actual_end_date='2023-07-31T14:00:00Z',
+            content='Test content',
+        )
 
-        # Check that the task is updated in the database
-        task = Task.objects.get(pk=self.task.id)
-        self.assertEqual(task.title, updated_data['title'])
-        self.assertEqual(task.description, updated_data['description'])
-        self.assertEqual(task.tag, updated_data['tag'])
+        self.create_url = reverse('task-list-create')
+        self.detail_url = reverse('task-detail', args=[self.task.id])
+        self.login_url = reverse('token_obtain_pair')
 
-        # Create a request to delete the task
-        request = self.factory.delete(f'/tasks/{self.task.id}/')
-        force_authenticate(request, user=self.user)
+        self.login_data = {
+            'username': 'testuser',
+            'password': 'testpassword'
+        }
 
-        # Set up the view and delete the task
-        view = TaskRetrieveUpdateDestroyAPIView.as_view()
-        response = view(request, pk=self.task.id)
-        self.assertEqual(response.status_code, 204)
+        self.token_response = self.client.post(self.login_url, self.login_data, format='json')
+        self.access_token = self.token_response.data['access']
 
-        # Check that the task is deleted from the database
-        with self.assertRaises(Task.DoesNotExist):
-            Task.objects.get(pk=self.task.id)
+    def test_create_task(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.access_token)
+        data = {
+            'title': 'New Task',
+            'tag': 'UI',
+            'desc': 'New description',
+            'status': 'NEW',
+            'hours': 3.0,
+            'planned_start_date': '2023-07-31T12:00:00Z',
+            'planned_end_date': '2023-07-31T17:00:00Z',
+            'actual_start_date': '2023-07-31T13:00:00Z',
+            'actual_end_date': '2023-07-31T16:00:00Z',
+            'content': 'New content',
+        }
+        response = self.client.post(self.create_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Task.objects.count(), 2)  # 1 existing + 1 new task
+        self.assertEqual(response.data['title'], 'New Task')
+
+    def test_retrieve_task(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.access_token)
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['title'], 'Test Task')
+
+    def test_update_task(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.access_token)
+        data = {
+            'title': 'Updated Task',
+            'status': 'INPROGRESS',
+            'hours': 8.0,
+        }
+        response = self.client.patch(self.detail_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['title'], 'Updated Task')
+        self.assertEqual(response.data['status'], 'INPROGRESS')
+        self.assertEqual(response.data['hours'], 8.0)
+
+    def test_delete_task(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.access_token)
+        response = self.client.delete(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Task.objects.count(), 0)
+
+# Add more test cases for the Activity and Comment APIs in a similar manner.
+

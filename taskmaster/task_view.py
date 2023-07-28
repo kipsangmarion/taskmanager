@@ -2,7 +2,6 @@ from django.db.models import Q
 from rest_framework import generics
 from taskmaster.models import Task
 from taskmaster.serializers import TaskSerializer
-from rest_framework.permissions import IsAuthenticated
 
 
 class TaskCreateAPIView(generics.ListCreateAPIView):

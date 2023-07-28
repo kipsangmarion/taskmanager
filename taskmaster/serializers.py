@@ -92,8 +92,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return representation
 
 
-
-
 # TaskSerializer
 class TaskSerializer(serializers.ModelSerializer):
     class Meta:
